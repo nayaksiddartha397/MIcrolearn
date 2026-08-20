@@ -1,4 +1,3 @@
-# LoanSight — Loan Repayment Predictor
 
 Predicts whether a Lending Club loan will be repaid or default.
 **Zero sklearn** — every model, scaler, encoder, imputer, and grid search
