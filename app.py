@@ -24,6 +24,13 @@ CORS(app)
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "model", "model.pkl")
 bundle = None
 
+RAW_NUMERIC_FIELDS = [
+    "loan_amnt", "int_rate", "installment", "annual_inc", "dti",
+    "delinq_2yrs", "inq_last_6mths", "mths_since_last_delinq",
+    "open_acc", "pub_rec", "revol_bal", "revol_util", "total_acc",
+    "years_since_earliest_cr_line", "years_since_last_credit_pull",
+]
+
 
 def load_bundle():
     global bundle
@@ -42,6 +49,21 @@ def load_bundle():
 
 def engineer_features(data: dict) -> dict:
     """Derive the four engineered features from raw form inputs."""
+    for field in RAW_NUMERIC_FIELDS:
+        if field not in data or data[field] in (None, ""):
+            raise ValueError(f"Missing numeric field: {field}")
+        try:
+            data[field] = float(data[field])
+        except (TypeError, ValueError):
+            raise ValueError(f"{field} must be a number") from None
+        if not np.isfinite(data[field]):
+            raise ValueError(f"{field} must be a finite number")
+
+    if data["loan_amnt"] <= 0 or data["annual_inc"] <= 0 or data["installment"] <= 0:
+        raise ValueError("Loan amount, annual income, and installment must be positive")
+    if not 0 <= data["revol_util"] <= 1:
+        raise ValueError("revol_util must be between 0 and 1")
+
     ann_inc     = max(float(data.get("annual_inc",  50_000)), 1.0)
     loan_amnt   = float(data.get("loan_amnt",   10_000))
     installment = float(data.get("installment",    300))
@@ -81,9 +103,17 @@ def index():
 @app.route("/api/predict", methods=["POST"])
 def predict():
     if bundle is None:
+        load_bundle()
+    if bundle is None:
         return jsonify({"error": "Model not loaded. Run python train.py first."}), 503
 
-    data     = engineer_features(dict(request.get_json(force=True)))
+    try:
+        payload = request.get_json(force=True)
+        if not isinstance(payload, dict):
+            raise ValueError("Request body must be a JSON object")
+        data = engineer_features(dict(payload))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     X        = build_feature_row(data)
     pipeline = bundle["pipeline"]
 
@@ -125,6 +155,8 @@ def predict():
 @app.route("/api/metrics")
 def get_metrics():
     if bundle is None:
+        load_bundle()
+    if bundle is None:
         return jsonify({"error": "Model not loaded."}), 503
 
     m           = bundle["test_metrics"]
@@ -144,6 +176,7 @@ def get_metrics():
         "confusion_matrix": m["confusion_matrix"],
         "report":           m["report"],
         "top_features":     top_features,
+        "training_info":    bundle.get("training_info", {}),
     })
 
 

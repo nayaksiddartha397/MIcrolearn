@@ -21,7 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from microlearn.preprocessing   import (StandardScaler, OneHotEncoder,
                                          SimpleImputer, Pipeline, ColumnTransformer)
 from microlearn.tree             import RandomForestClassifier
-from microlearn.model_selection  import train_test_split, GridSearchCV
+from microlearn.model_selection  import (train_test_split, GridSearchCV,
+                                         StratifiedKFold)
 from microlearn                  import metrics
 
 # ══════════════════════════════════════════════════════ feature definitions ═══
@@ -46,6 +47,7 @@ NUM_IDX  = list(range(len(NUMERIC_COLS)))
 CAT_IDX  = list(range(len(NUMERIC_COLS), len(ALL_COLS)))
 
 _CUR_YR = datetime.now().year
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ══════════════════════════════════════════════════════════ helper ════════════
 
@@ -109,7 +111,11 @@ def load_real_data(path):
         df["term"] = df["term"].astype(str).str.strip()
 
     # ── 4. feature engineering ────────────────────────────────────────────
-    ann_inc = pd.to_numeric(df.get("annual_inc", 1), errors="coerce").fillna(1.0)
+    ann_inc = (
+        pd.to_numeric(df.get("annual_inc", 1), errors="coerce")
+        .fillna(1.0)
+        .clip(lower=1.0)
+    )
 
     df["loan_amnt_to_annual_inc"]    = df["loan_amnt"] / ann_inc
     df["installment_to_monthly_inc"] = df["installment"] / (ann_inc / 12.0 + 1e-9)
@@ -143,7 +149,7 @@ def load_real_data(path):
             df[col] = df[col].fillna("Unknown").astype(str)
 
     # ── 6. optional sample cap (avoids multi-hour training on 2M rows) ────
-    MAX_ROWS = 200_000
+    MAX_ROWS = int(os.environ.get("MAX_ROWS", "200000"))
     if len(df) > MAX_ROWS:
         print(f"  Sampling {MAX_ROWS:,} rows from {len(df):,} "
               f"(set MAX_ROWS in train.py to change this)")
@@ -153,6 +159,10 @@ def load_real_data(path):
     for col in ALL_COLS:
         if col not in df.columns:
             df[col] = 0.0 if col in NUMERIC_COLS else "Unknown"
+
+    # Treat any non-finite source values as missing so SimpleImputer can
+    # replace them. Infinite values otherwise poison StandardScaler.
+    df[NUMERIC_COLS] = df[NUMERIC_COLS].replace([np.inf, -np.inf], np.nan)
 
     y = df["repay_fail"].values.astype(int)
     X = df[ALL_COLS].values.astype(object)
@@ -197,7 +207,10 @@ def generate_synthetic_data(n: int = 6_000):
                             "other","small_business","major_purchase"], n)
 
     logit = (
-        -1.5
+        # Calibrated to roughly a 20% default rate, close to the settled
+        # Lending Club population.  The old -1.5 intercept generated about
+        # 66% defaults and made ordinary applicants appear excessively risky.
+        -4.0
         + 0.06 * int_rate
         + 0.04 * dti
         + 0.40 * delinq
@@ -283,7 +296,8 @@ def main():
             "classifier__n_estimators": [30, 60],
             "classifier__max_depth":    [8, 12],
         },
-        cv=3, verbose=1,
+        cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42),
+        verbose=1,
     )
     grid.fit(X_tr, y_tr)
     pipeline = grid.best_estimator_
@@ -329,7 +343,8 @@ def main():
         print(f"   {rank:2d}.  {name:<40}  {importances[i]:.4f}  {bar}")
 
     # ── save model bundle ─────────────────────────────────────────────────
-    os.makedirs("model", exist_ok=True)
+    model_dir = os.path.join(PROJECT_DIR, "model")
+    os.makedirs(model_dir, exist_ok=True)
     bundle = dict(
         pipeline     = pipeline,
         all_cols     = ALL_COLS,
@@ -345,8 +360,14 @@ def main():
             confusion_matrix = cm.tolist(),
             report           = rpt,
         ),
+        training_info = dict(
+            data_source = "real" if csv_path and os.path.exists(csv_path) else "synthetic",
+            samples = int(n_total),
+            default_rate = float(y.mean()),
+        ),
     )
-    with open("model/model.pkl", "wb") as f:
+    model_path = os.path.join(model_dir, "model.pkl")
+    with open(model_path, "wb") as f:
         pickle.dump(bundle, f)
 
     print("\n  ✓  model/model.pkl saved")

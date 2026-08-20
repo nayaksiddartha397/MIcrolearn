@@ -1,560 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LoanSight — Loan Repayment Predictor</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet"/>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loan Repayment Predictor</title>
   <style>
-    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    :root {
-      --bg:#080c14; --surface:#0d1424; --card:#111d35; --border:#1c2b4a;
-      --primary:#4f8eff; --primary2:#7b5ea7;
-      --success:#22c55e; --danger:#f43f5e; --warning:#f59e0b;
-      --text:#e2e8f0; --muted:#64748b; --soft:#94a3b8;
-    }
-    body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-
-    /* ── header ── */
-    .header { display:flex; align-items:center; justify-content:space-between; padding:18px 40px; border-bottom:1px solid var(--border); background:rgba(8,12,20,.92); backdrop-filter:blur(12px); position:sticky; top:0; z-index:100; }
-    .logo { font-family:'Space Grotesk',sans-serif; font-size:1.35rem; font-weight:700; letter-spacing:-.5px; background:linear-gradient(135deg,#4f8eff,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-    .logo span { font-weight:400; opacity:.7; }
-    .badge-ml { font-size:.7rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:3px 10px; border-radius:99px; border:1px solid #4f8eff55; color:var(--primary); background:#4f8eff11; }
-    .btn-stats { font-family:'DM Sans',sans-serif; font-size:.85rem; padding:7px 18px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--soft); cursor:pointer; transition:all .2s; }
-    .btn-stats:hover { border-color:var(--primary); color:var(--primary); }
-
-    /* ── hero ── */
-    .hero { text-align:center; padding:56px 24px 40px; background:radial-gradient(ellipse 70% 40% at 50% 0%,#4f8eff18 0%,transparent 70%); }
-    .hero h1 { font-family:'Space Grotesk',sans-serif; font-size:clamp(1.8rem,4vw,2.8rem); font-weight:700; letter-spacing:-1px; margin-bottom:12px; }
-    .hero h1 em { font-style:normal; color:var(--primary); }
-    .hero p { color:var(--soft); font-size:1rem; max-width:520px; margin:0 auto; line-height:1.6; }
-
-    /* ── layout ── */
-    .main { max-width:720px; margin:0 auto; padding:32px 20px 64px; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:36px; }
-
-    /* ── step indicator ── */
-    .steps { display:flex; align-items:center; justify-content:center; margin-bottom:32px; }
-    .step-dot { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:700; transition:all .3s; flex-shrink:0; }
-    .step-dot.done     { background:var(--primary); color:#fff; }
-    .step-dot.active   { background:#4f8eff22; border:2px solid var(--primary); color:var(--primary); }
-    .step-dot.inactive { background:var(--surface); border:2px solid var(--border); color:var(--muted); }
-    .step-line { flex:1; height:2px; max-width:80px; background:var(--border); transition:background .3s; }
-    .step-line.done { background:var(--primary); }
-    .step-label { display:flex; justify-content:space-between; padding:0 0 24px; font-size:.72rem; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; }
-    .step-label span { flex:1; text-align:center; }
-
-    /* ── form ── */
-    .form-title { font-family:'Space Grotesk',sans-serif; font-size:1.15rem; font-weight:600; margin-bottom:6px; }
-    .form-subtitle { font-size:.85rem; color:var(--muted); margin-bottom:28px; }
-    .fields { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    .field { display:flex; flex-direction:column; gap:6px; }
-    .field.span2 { grid-column:span 2; }
-    label { font-size:.78rem; font-weight:500; color:var(--soft); letter-spacing:.03em; text-transform:uppercase; }
-    input, select { font-family:'DM Sans',sans-serif; font-size:.9rem; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; color:var(--text); outline:none; transition:border .2s; width:100%; appearance:none; -webkit-appearance:none; }
-    input:focus, select:focus { border-color:var(--primary); box-shadow:0 0 0 3px #4f8eff18; }
-    input[type=range] { padding:4px 0; accent-color:var(--primary); cursor:pointer; background:transparent; border:none; box-shadow:none; }
-    .range-row { display:flex; align-items:center; gap:12px; }
-    .range-val { font-size:.9rem; font-weight:600; color:var(--primary); min-width:44px; text-align:right; }
-
-    /* ── nav buttons ── */
-    .nav-row { display:flex; justify-content:space-between; margin-top:30px; }
-    .btn { font-family:'DM Sans',sans-serif; font-size:.9rem; font-weight:600; padding:11px 28px; border-radius:10px; border:none; cursor:pointer; transition:all .2s; }
-    .btn-primary { background:linear-gradient(135deg,#4f8eff,#7b5ea7); color:#fff; }
-    .btn-primary:hover { opacity:.88; transform:translateY(-1px); }
-    .btn-ghost { background:var(--surface); border:1px solid var(--border); color:var(--soft); }
-    .btn-ghost:hover { border-color:var(--soft); color:var(--text); }
-
-    /* ── loading ── */
-    .loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 0; gap:18px; }
-    .spinner { width:44px; height:44px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .8s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .loading p { color:var(--muted); font-size:.9rem; }
-
-    /* ── results ── */
-    .verdict-banner { display:flex; align-items:center; gap:16px; padding:22px 26px; border-radius:14px; margin-bottom:28px; }
-    .verdict-banner.approved { background:#22c55e14; border:1px solid #22c55e44; }
-    .verdict-banner.denied   { background:#f43f5e14; border:1px solid #f43f5e44; }
-    .verdict-icon { font-size:2rem; flex-shrink:0; width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; }
-    .verdict-banner.approved .verdict-icon { background:#22c55e22; }
-    .verdict-banner.denied   .verdict-icon { background:#f43f5e22; }
-    .verdict-word { font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; }
-    .verdict-banner.approved .verdict-word { color:var(--success); }
-    .verdict-banner.denied   .verdict-word { color:var(--danger);  }
-    .verdict-sub { font-size:.82rem; color:var(--soft); margin-top:3px; }
-    .results-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-    .result-panel { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px 22px; }
-    .panel-title { font-size:.7rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
-    .gauge-wrap { display:flex; justify-content:center; }
-    .factor-row { margin-bottom:13px; }
-    .factor-meta { display:flex; justify-content:space-between; font-size:.78rem; margin-bottom:5px; }
-    .factor-name { color:var(--soft); }
-    .factor-pct  { font-weight:600; color:var(--text); }
-    .factor-track { height:6px; border-radius:99px; background:var(--border); overflow:hidden; }
-    .factor-fill  { height:100%; border-radius:99px; background:linear-gradient(90deg,#4f8eff,#a78bfa); transition:width 1s ease; }
-    .reset-row { text-align:center; margin-top:28px; }
-    .btn-reset { background:var(--surface); border:1px solid var(--border); color:var(--soft); font-family:'DM Sans',sans-serif; font-size:.85rem; padding:9px 22px; border-radius:8px; cursor:pointer; transition:all .2s; }
-    .btn-reset:hover { border-color:var(--primary); color:var(--primary); }
-
-    /* ── model stats ── */
-    .stats-section { margin-top:32px; }
-    .stats-toggle { width:100%; display:flex; align-items:center; justify-content:space-between; padding:16px 22px; background:var(--card); border:1px solid var(--border); border-radius:14px; cursor:pointer; transition:border-color .2s; color:var(--text); font-family:'DM Sans',sans-serif; font-size:.9rem; }
-    .stats-toggle:hover { border-color:var(--primary); }
-    .stats-toggle .arrow { transition:transform .3s; font-size:.8rem; }
-    .stats-toggle .arrow.open { transform:rotate(180deg); }
-    .stats-body { margin-top:8px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:28px; animation:fadeIn .25s ease; }
-    @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1} }
-    .metrics-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
-    .metric-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; text-align:center; }
-    .metric-val { font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; color:var(--primary); }
-    .metric-lbl { font-size:.7rem; color:var(--muted); margin-top:4px; letter-spacing:.05em; text-transform:uppercase; }
-    .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-    .cm-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-    .cm-cell { border-radius:10px; padding:14px; text-align:center; }
-    .cm-cell.correct { background:#22c55e14; border:1px solid #22c55e33; }
-    .cm-cell.wrong   { background:#f43f5e14; border:1px solid #f43f5e33; }
-    .cm-num { font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; }
-    .cm-cell.correct .cm-num { color:var(--success); }
-    .cm-cell.wrong   .cm-num { color:var(--danger); }
-    .cm-lbl { font-size:.68rem; color:var(--muted); margin-top:4px; }
-    .fi-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-    .fi-name { font-size:.75rem; color:var(--soft); width:170px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .fi-track { flex:1; height:7px; background:var(--border); border-radius:99px; overflow:hidden; }
-    .fi-fill  { height:100%; border-radius:99px; background:linear-gradient(90deg,#4f8eff88,#a78bfa88); transition:width 1s ease; }
-    .fi-pct { font-size:.72rem; color:var(--muted); min-width:36px; text-align:right; }
-    .section-label { font-size:.7rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
-    .error-banner { background:#f43f5e14; border:1px solid #f43f5e44; border-radius:12px; padding:14px 18px; color:#f43f5e; font-size:.85rem; margin-bottom:20px; }
-    .footer { text-align:center; padding:24px; font-size:.75rem; color:var(--muted); border-top:1px solid var(--border); }
-
-    @media(max-width:560px){
-      .fields{grid-template-columns:1fr} .field.span2{grid-column:span 1}
-      .results-grid{grid-template-columns:1fr} .metrics-row{grid-template-columns:repeat(2,1fr)}
-      .stats-grid{grid-template-columns:1fr} .header{padding:14px 20px} .card{padding:24px 18px}
-    }
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+    .container { width: 720px; max-width: calc(100% - 32px); margin: 30px auto; background: white; border: 1px solid #ccc; padding: 20px; }
+    h1 { margin-top: 0; font-size: 25px; color: #333; }
+    h2 { font-size: 18px; margin: 25px 0 10px; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+    p { color: #555; line-height: 1.4; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
+    label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+    input, select { width: 100%; box-sizing: border-box; padding: 7px; border: 1px solid #aaa; border-radius: 2px; font-size: 14px; }
+    button { margin-top: 24px; padding: 9px 16px; background: #286090; border: 1px solid #204d74; color: white; cursor: pointer; font-size: 14px; }
+    button:hover { background: #204d74; }
+    .result, .error { margin-top: 20px; padding: 14px; border: 1px solid #ccc; }
+    .result.approved { background: #e7f5e8; border-color: #8acb90; }
+    .result.denied { background: #fde8e8; border-color: #e39494; }
+    .error { color: #8b0000; background: #fff0f0; border-color: #e39494; }
+    .small { font-size: 13px; color: #666; }
+    @media (max-width: 600px) { .fields { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div class="container">
+    <h1>Loan Repayment Predictor</h1>
+    <p>This project predicts whether a loan is likely to be repaid.</p>
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+    <form id="loan-form">
+      <h2>Loan details</h2>
+      <div class="fields">
+        <div><label for="loan_amnt">Loan Amount ($)</label><input id="loan_amnt" name="loan_amnt" type="number" value="15000" required></div>
+        <div><label for="term">Loan Term</label><select id="term" name="term"><option>36 months</option><option>60 months</option></select></div>
+        <div><label for="int_rate">Interest Rate (%)</label><input id="int_rate" name="int_rate" type="number" step="0.1" value="13.5" required></div>
+        <div><label for="installment">Monthly Installment ($)</label><input id="installment" name="installment" type="number" value="455" required></div>
+        <div><label for="purpose">Purpose</label><select id="purpose" name="purpose"><option value="debt_consolidation">Debt Consolidation</option><option value="credit_card">Credit Card</option><option value="home_improvement">Home Improvement</option><option value="major_purchase">Major Purchase</option><option value="small_business">Small Business</option><option value="other">Other</option></select></div>
+      </div>
 
-    const DEFAULTS = {
-      loan_amnt: 15000, int_rate: 13.5, installment: 455,
-      term: "36 months", purpose: "debt_consolidation",
-      annual_inc: 65000, dti: 18.0,
-      emp_length: "5 years", home_ownership: "RENT",
-      verification_status: "Verified",
-      revol_bal: 8500, revol_util: 0.45,
-      open_acc: 8, total_acc: 22,
-      delinq_2yrs: 0, inq_last_6mths: 1,
-      mths_since_last_delinq: 0, pub_rec: 0,
-      years_since_earliest_cr_line: 8,
-      years_since_last_credit_pull: 1,
-    };
+      <h2>Applicant details</h2>
+      <div class="fields">
+        <div><label for="annual_inc">Annual Income ($)</label><input id="annual_inc" name="annual_inc" type="number" value="65000" required></div>
+        <div><label for="dti">Debt-to-Income Ratio (%)</label><input id="dti" name="dti" type="number" step="0.1" value="18" required></div>
+        <div><label for="emp_length">Employment Length</label><select id="emp_length" name="emp_length"><option>&lt; 1 year</option><option>1 year</option><option>2 years</option><option>3 years</option><option>4 years</option><option selected>5 years</option><option>6 years</option><option>7 years</option><option>8 years</option><option>9 years</option><option>10+ years</option></select></div>
+        <div><label for="home_ownership">Home Ownership</label><select id="home_ownership" name="home_ownership"><option selected>RENT</option><option>OWN</option><option>MORTGAGE</option></select></div>
+        <div><label for="verification_status">Income Verification</label><select id="verification_status" name="verification_status"><option>Not Verified</option><option selected>Verified</option><option>Source Verified</option></select></div>
+      </div>
 
-    /* ── risk gauge ── */
-    function RiskGauge({ probability }) {
-      const r = 58, cx = 88, cy = 78;
-      const C = Math.PI * r;
-      const pct = Math.min(1, Math.max(0, probability));
-      const offset = C * (1 - pct);
-      const color = pct < 0.35 ? "#22c55e" : pct < 0.60 ? "#f59e0b" : "#f43f5e";
-      return (
-        <svg viewBox="0 0 176 104" width="176" height="104" style={{overflow:"visible"}}>
-          <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${cx+r} ${cy}`}
-                fill="none" stroke="#1c2b4a" strokeWidth="13" strokeLinecap="round"/>
-          <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${cx+r} ${cy}`}
-                fill="none" stroke={color} strokeWidth="13" strokeLinecap="round"
-                strokeDasharray={C} strokeDashoffset={offset}
-                style={{transition:"stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)"}}/>
-          <text x={cx} y={cy-10} textAnchor="middle"
-                fontFamily="'Space Grotesk',sans-serif" fontSize="26" fontWeight="700" fill={color}>
-            {Math.round(pct*100)}%
-          </text>
-          <text x={cx} y={cy+14} textAnchor="middle" fontFamily="'DM Sans',sans-serif"
-                fontSize="9" fill="#64748b" letterSpacing="1.5">
-            DEFAULT PROBABILITY
-          </text>
-        </svg>
-      );
-    }
+      <h2>Credit history</h2>
+      <div class="fields">
+        <div><label for="revol_bal">Revolving Balance ($)</label><input id="revol_bal" name="revol_bal" type="number" value="8500" required></div>
+        <div><label for="revol_util">Revolving Utilization (0 to 1)</label><input id="revol_util" name="revol_util" type="number" step="0.01" min="0" max="1" value="0.45" required></div>
+        <div><label for="open_acc">Open Credit Lines</label><input id="open_acc" name="open_acc" type="number" value="8" required></div>
+        <div><label for="total_acc">Total Credit Lines</label><input id="total_acc" name="total_acc" type="number" value="22" required></div>
+        <div><label for="delinq_2yrs">Delinquencies (2 years)</label><input id="delinq_2yrs" name="delinq_2yrs" type="number" value="0" required></div>
+        <div><label for="inq_last_6mths">Inquiries (6 months)</label><input id="inq_last_6mths" name="inq_last_6mths" type="number" value="1" required></div>
+        <div><label for="mths_since_last_delinq">Months Since Delinquency</label><input id="mths_since_last_delinq" name="mths_since_last_delinq" type="number" value="0" required></div>
+        <div><label for="pub_rec">Public Records</label><input id="pub_rec" name="pub_rec" type="number" value="0" required></div>
+        <div><label for="years_since_earliest_cr_line">Years of Credit History</label><input id="years_since_earliest_cr_line" name="years_since_earliest_cr_line" type="number" value="8" required></div>
+        <div><label for="years_since_last_credit_pull">Years Since Last Credit Pull</label><input id="years_since_last_credit_pull" name="years_since_last_credit_pull" type="number" value="1" required></div>
+      </div>
 
-    /* ── shared field components ── */
-    function Field({ label, id, children, span2 }) {
-      return (
-        <div className={`field${span2 ? " span2" : ""}`}>
-          <label htmlFor={id}>{label}</label>
-          {children}
-        </div>
-      );
-    }
-    function Input({ name, form, onChange, ...rest }) {
-      return <input id={name} name={name} value={form[name] ?? ""}
-                    onChange={e => onChange(name, e.target.value)} {...rest}/>;
-    }
-    function Sel({ name, form, onChange, options }) {
-      return (
-        <select id={name} value={form[name] ?? ""}
-                onChange={e => onChange(name, e.target.value)}>
-          {options.map(o => (
-            <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>
-          ))}
-        </select>
-      );
-    }
-    function RangeInput({ name, form, onChange, min, max, step=0.01, fmt }) {
-      const val = parseFloat(form[name] ?? 0);
-      return (
-        <div className="range-row">
-          <input type="range" min={min} max={max} step={step} value={val}
-                 onChange={e => onChange(name, parseFloat(e.target.value))}
-                 style={{flex:1}}/>
-          <span className="range-val">{fmt ? fmt(val) : val}</span>
-        </div>
-      );
-    }
+      <button type="submit">Check Loan</button>
+    </form>
 
-    /* ── Step 1: Loan Details ── */
-    function Step1({ form, onChange }) {
-      return (
-        <>
-          <div className="form-title">Loan Details</div>
-          <div className="form-subtitle">Basic information about the loan being requested.</div>
-          <div className="fields">
-            <Field label="Loan Amount ($)" id="loan_amnt">
-              <Input name="loan_amnt" form={form} onChange={onChange} type="number" min="500" max="40000"/>
-            </Field>
-            <Field label="Loan Term" id="term">
-              <Sel name="term" form={form} onChange={onChange}
-                options={["36 months","60 months"]}/>
-            </Field>
-            <Field label="Interest Rate (%)" id="int_rate">
-              <Input name="int_rate" form={form} onChange={onChange} type="number" min="1" max="35" step="0.1"/>
-            </Field>
-            <Field label="Monthly Installment ($)" id="installment">
-              <Input name="installment" form={form} onChange={onChange} type="number" min="10"/>
-            </Field>
-            <Field label="Loan Purpose" id="purpose" span2>
-              <Sel name="purpose" form={form} onChange={onChange}
-                options={[
-                  {value:"debt_consolidation", label:"Debt Consolidation"},
-                  {value:"credit_card",         label:"Credit Card Payoff"},
-                  {value:"home_improvement",    label:"Home Improvement"},
-                  {value:"major_purchase",      label:"Major Purchase"},
-                  {value:"small_business",      label:"Small Business"},
-                  {value:"other",               label:"Other"},
-                ]}/>
-            </Field>
-          </div>
-        </>
-      );
-    }
+    <div id="message" aria-live="polite"></div>
+    <p class="small">This is a student project and should not be used for real lending decisions.</p>
+  </div>
 
-    /* ── Step 2: Financial Profile ── */
-    function Step2({ form, onChange }) {
-      return (
-        <>
-          <div className="form-title">Financial Profile</div>
-          <div className="form-subtitle">Income, employment, and housing information.</div>
-          <div className="fields">
-            <Field label="Annual Income ($)" id="annual_inc">
-              <Input name="annual_inc" form={form} onChange={onChange} type="number" min="1000"/>
-            </Field>
-            <Field label="Debt-to-Income Ratio (%)" id="dti">
-              <Input name="dti" form={form} onChange={onChange} type="number" min="0" max="60" step="0.1"/>
-            </Field>
-            <Field label="Employment Length" id="emp_length">
-              <Sel name="emp_length" form={form} onChange={onChange}
-                options={["< 1 year","1 year","2 years","3 years","4 years",
-                          "5 years","6 years","7 years","8 years","9 years","10+ years"]}/>
-            </Field>
-            <Field label="Home Ownership" id="home_ownership">
-              <Sel name="home_ownership" form={form} onChange={onChange}
-                options={["RENT","OWN","MORTGAGE"]}/>
-            </Field>
-            <Field label="Income Verification" id="verification_status" span2>
-              <Sel name="verification_status" form={form} onChange={onChange}
-                options={["Not Verified","Verified","Source Verified"]}/>
-            </Field>
-          </div>
-        </>
-      );
-    }
+  <script>
+    const form = document.getElementById('loan-form');
+    const message = document.getElementById('message');
+    const numberFields = ['loan_amnt', 'int_rate', 'installment', 'annual_inc', 'dti', 'revol_bal', 'revol_util', 'open_acc', 'total_acc', 'delinq_2yrs', 'inq_last_6mths', 'mths_since_last_delinq', 'pub_rec', 'years_since_earliest_cr_line', 'years_since_last_credit_pull'];
 
-    /* ── Step 3: Credit History ── */
-    function Step3({ form, onChange }) {
-      return (
-        <>
-          <div className="form-title">Credit History</div>
-          <div className="form-subtitle">Current credit profile and past delinquency data.</div>
-          <div className="fields">
-            <Field label="Revolving Balance ($)" id="revol_bal">
-              <Input name="revol_bal" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-            <Field label="Revolving Utilization" id="revol_util">
-              <RangeInput name="revol_util" form={form} onChange={onChange}
-                min={0} max={1} step={0.01} fmt={v => `${Math.round(v*100)}%`}/>
-            </Field>
-            <Field label="Open Credit Lines" id="open_acc">
-              <Input name="open_acc" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-            <Field label="Total Credit Lines" id="total_acc">
-              <Input name="total_acc" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-            <Field label="Delinquencies (2 yrs)" id="delinq_2yrs">
-              <Input name="delinq_2yrs" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-            <Field label="Inquiries (last 6 months)" id="inq_last_6mths">
-              <Input name="inq_last_6mths" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-            <Field label="Months Since Delinquency" id="mths_since_last_delinq">
-              <Input name="mths_since_last_delinq" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-            <Field label="Public Records" id="pub_rec">
-              <Input name="pub_rec" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-            <Field label="Years of Credit History" id="years_since_earliest_cr_line">
-              <Input name="years_since_earliest_cr_line" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-            <Field label="Years Since Last Credit Pull" id="years_since_last_credit_pull">
-              <Input name="years_since_last_credit_pull" form={form} onChange={onChange} type="number" min="0"/>
-            </Field>
-          </div>
-        </>
-      );
-    }
-
-    /* ── Results Panel ── */
-    function Results({ result, onReset }) {
-      const approved = result.prediction === 0;
-      const maxImp   = Math.max(...result.top_factors.map(f => f.importance));
-      return (
-        <>
-          <div className={`verdict-banner ${approved ? "approved" : "denied"}`}>
-            <div className="verdict-icon">{approved ? "✓" : "✕"}</div>
-            <div>
-              <div className="verdict-word">{result.verdict}</div>
-              <div className="verdict-sub">
-                {approved
-                  ? "This applicant is likely to repay the loan in full."
-                  : "This applicant is at elevated risk of default."}
-              </div>
-            </div>
-          </div>
-          <div className="results-grid">
-            <div className="result-panel">
-              <div className="panel-title">Default Risk</div>
-              <div className="gauge-wrap"><RiskGauge probability={result.probability}/></div>
-            </div>
-            <div className="result-panel">
-              <div className="panel-title">Top Risk Factors</div>
-              {result.top_factors.map(f => {
-                const barPct = maxImp > 0 ? (f.importance / maxImp) * 100 : 0;
-                return (
-                  <div className="factor-row" key={f.feature}>
-                    <div className="factor-meta">
-                      <span className="factor-name">{f.feature.replace(/_/g," ")}</span>
-                      <span className="factor-pct">{(f.importance*100).toFixed(1)}%</span>
-                    </div>
-                    <div className="factor-track">
-                      <div className="factor-fill" style={{width:`${barPct}%`}}/>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="reset-row">
-            <button className="btn-reset" onClick={onReset}>← Predict Another</button>
-          </div>
-        </>
-      );
-    }
-
-    /* ── Model Stats Accordion ── */
-    function ModelStats() {
-      const [open,  setOpen]  = useState(false);
-      const [stats, setStats] = useState(null);
-      const [err,   setErr]   = useState(null);
-      useEffect(() => {
-        if (!open || stats) return;
-        fetch("/api/metrics")
-          .then(r => r.json())
-          .then(d => { if (d.error) setErr(d.error); else setStats(d); })
-          .catch(() => setErr("Could not reach /api/metrics — is the server running?"));
-      }, [open]);
-      const cm = stats?.confusion_matrix;
-      const maxImp = stats ? Math.max(...stats.top_features.map(f=>f.importance)) : 1;
-      return (
-        <div className="stats-section">
-          <button className="stats-toggle" onClick={() => setOpen(o => !o)}>
-            <span>⚙ Model Performance Dashboard</span>
-            <span className={`arrow ${open?"open":""}`}>▼</span>
-          </button>
-          {open && (
-            <div className="stats-body">
-              {err && <div className="error-banner">{err}</div>}
-              {!stats && !err && <div style={{textAlign:"center",color:"var(--muted)",padding:"20px"}}>Loading…</div>}
-              {stats && (
-                <>
-                  <div className="metrics-row">
-                    {[
-                      {val:(stats.accuracy*100).toFixed(1)+"%", lbl:"Accuracy"},
-                      {val:stats.roc_auc.toFixed(3),            lbl:"ROC-AUC"},
-                      {val:cm?cm[1][1]:"—",                     lbl:"True Positives"},
-                      {val:cm?cm[0][0]:"—",                     lbl:"True Negatives"},
-                    ].map(m => (
-                      <div className="metric-card" key={m.lbl}>
-                        <div className="metric-val">{m.val}</div>
-                        <div className="metric-lbl">{m.lbl}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="stats-grid">
-                    <div>
-                      <div className="section-label">Confusion Matrix</div>
-                      {cm && (
-                        <div className="cm-grid">
-                          {[
-                            {n:cm[0][0],lbl:"TN — Correct Repaid",   cls:"correct"},
-                            {n:cm[0][1],lbl:"FP — Wrong Default",    cls:"wrong"},
-                            {n:cm[1][0],lbl:"FN — Missed Default",   cls:"wrong"},
-                            {n:cm[1][1],lbl:"TP — Correct Default",  cls:"correct"},
-                          ].map((c,i) => (
-                            <div key={i} className={`cm-cell ${c.cls}`}>
-                              <div className="cm-num">{typeof c.n==="number"?c.n.toLocaleString():c.n}</div>
-                              <div className="cm-lbl">{c.lbl}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="section-label">Top Feature Importances</div>
-                      {stats.top_features.map(f => (
-                        <div className="fi-row" key={f.name}>
-                          <div className="fi-name" title={f.name}>{f.name.replace(/_/g," ")}</div>
-                          <div className="fi-track">
-                            <div className="fi-fill" style={{width:`${(f.importance/maxImp)*100}%`}}/>
-                          </div>
-                          <div className="fi-pct">{(f.importance*100).toFixed(1)}%</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    /* ── App Root ── */
-    function App() {
-      const [step,    setStep]    = useState(1);
-      const [form,    setForm]    = useState(DEFAULTS);
-      const [result,  setResult]  = useState(null);
-      const [loading, setLoading] = useState(false);
-      const [error,   setError]   = useState(null);
-
-      const handleChange = (name, value) => setForm(f => ({...f, [name]: value}));
-
-      async function submit() {
-        setLoading(true); setError(null);
-        try {
-          const res  = await fetch("/api/predict", {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body: JSON.stringify(form),
-          });
-          const data = await res.json();
-          if (data.error) throw new Error(data.error);
-          setResult(data);
-        } catch(e) {
-          setError(e.message || "Prediction failed. Is the server running?");
-        } finally {
-          setLoading(false);
-        }
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form).entries());
+      numberFields.forEach(function (field) { values[field] = Number(values[field]); });
+      message.className = '';
+      message.innerHTML = '<p>Checking loan details...</p>';
+      try {
+        const response = await fetch('/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Prediction failed.');
+        const approved = result.prediction === 0;
+        message.className = 'result ' + (approved ? 'approved' : 'denied');
+        message.innerHTML = '<h2>Result: ' + result.verdict + '</h2><p>Default probability: <strong>' + (result.probability * 100).toFixed(2) + '%</strong></p><p>Risk level: <strong>' + result.risk_level + '</strong></p><p class="small">Important factors: ' + result.top_factors.map(function (factor) { return factor.label; }).join(', ') + '</p>';
+      } catch (error) {
+        message.className = 'error';
+        message.textContent = error.message;
       }
-
-      function reset() { setResult(null); setStep(1); setError(null); }
-
-      const stepLabels = ["Loan Details","Your Profile","Credit History"];
-
-      return (
-        <>
-          <header className="header">
-            <div className="logo">Loan<span>Sight</span></div>
-            <span className="badge-ml">microlearn</span>
-            <button className="btn-stats"
-              onClick={() => document.querySelector(".stats-section")?.scrollIntoView({behavior:"smooth"})}>
-              Model Stats ↓
-            </button>
-          </header>
-
-          <div className="hero">
-            <h1>Will this loan be <em>repaid?</em></h1>
-            <p>Enter loan details and our microlearn RandomForest — trained on
-               real Lending Club data — predicts default probability in real time.</p>
-          </div>
-
-          <main className="main">
-            <div className="card">
-              {loading && (
-                <div className="loading">
-                  <div className="spinner"/>
-                  <p>Running microlearn pipeline…</p>
-                </div>
-              )}
-              {!loading && !result && (
-                <>
-                  <div className="steps">
-                    {[1,2,3].map((n,i) => (
-                      <React.Fragment key={n}>
-                        {i > 0 && <div className={`step-line ${step>i?"done":""}`}/>}
-                        <div className={`step-dot ${step>n?"done":step===n?"active":"inactive"}`}>
-                          {step > n ? "✓" : n}
-                        </div>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                  <div className="step-label">
-                    {stepLabels.map(l => <span key={l}>{l}</span>)}
-                  </div>
-                  {error && <div className="error-banner">{error}</div>}
-                  {step===1 && <Step1 form={form} onChange={handleChange}/>}
-                  {step===2 && <Step2 form={form} onChange={handleChange}/>}
-                  {step===3 && <Step3 form={form} onChange={handleChange}/>}
-                  <div className="nav-row">
-                    {step > 1
-                      ? <button className="btn btn-ghost" onClick={() => setStep(s=>s-1)}>← Back</button>
-                      : <span/>}
-                    {step < 3
-                      ? <button className="btn btn-primary" onClick={() => setStep(s=>s+1)}>Next →</button>
-                      : <button className="btn btn-primary" onClick={submit}>Predict Repayment ↗</button>}
-                  </div>
-                </>
-              )}
-              {!loading && result && <Results result={result} onReset={reset}/>}
-            </div>
-            <ModelStats/>
-          </main>
-
-          <footer className="footer">
-            Built with microlearn — a from-scratch NumPy ML library. No scikit-learn in the prediction stack.
-          </footer>
-        </>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+    });
   </script>
 </body>
 </html>

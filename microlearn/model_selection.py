@@ -55,6 +55,11 @@ def train_test_split(*arrays, test_size=0.2, random_state=None, stratify=None):
             train_idx.extend(c_idx[n_test:])
         train_idx = np.array(train_idx)
         test_idx  = np.array(test_idx)
+        # Do not leave the returned arrays grouped by class.  Besides being
+        # surprising to callers, class blocks make a subsequent ordinary
+        # KFold split produce single-class validation folds.
+        np.random.shuffle(train_idx)
+        np.random.shuffle(test_idx)
     else:
         perm      = np.random.permutation(n)
         split     = int(n * (1.0 - test_size))

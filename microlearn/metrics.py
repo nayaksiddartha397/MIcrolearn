@@ -191,28 +191,22 @@ def roc_auc_score(y_true, y_score):
     if n_pos == 0 or n_neg == 0:
         raise ValueError("roc_auc_score requires both positive and negative samples.")
 
-    # Sort by descending score
-    order  = np.argsort(y_score)[::-1]
-    y_sorted = y_true[order]
+    # Mann-Whitney U statistic with average ranks for tied scores.  Walking
+    # tied samples one-by-one makes AUC depend on their arbitrary sort order.
+    order = np.argsort(y_score, kind="mergesort")
+    sorted_scores = y_score[order]
+    ranks = np.empty(len(y_score), dtype=float)
+    start = 0
+    while start < len(y_score):
+        end = start + 1
+        while end < len(y_score) and sorted_scores[end] == sorted_scores[start]:
+            end += 1
+        # Ranks are one-based; every tied observation receives the mean rank.
+        ranks[order[start:end]] = (start + 1 + end) / 2.0
+        start = end
 
-    # Walk through sorted samples accumulating TP / FP
-    tprs = [0.0]
-    fprs = [0.0]
-    tp = fp = 0
-    for label in y_sorted:
-        if label == 1:
-            tp += 1
-        else:
-            fp += 1
-        tprs.append(tp / n_pos)
-        fprs.append(fp / n_neg)
-    tprs.append(1.0); fprs.append(1.0)
-
-    try:
-        auc = float(np.trapezoid(tprs, fprs))  # NumPy >= 2.0
-    except AttributeError:
-        auc = float(np.trapz(tprs, fprs))      # NumPy < 2.0
-    return auc
+    pos_rank_sum = ranks[y_true == 1].sum()
+    return float((pos_rank_sum - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
 
 
 # -------------------------------------------------------- report ---------

@@ -14,7 +14,7 @@ loan-predictor/
 ├── data/                ← put the Lending Club CSV here (gitignored)
 ├── model/               ← auto-created by train.py; holds model.pkl
 ├── static/
-│   └── index.html       ← React single-page app (no build step)
+│   └── index.html       ← basic HTML, CSS, and JavaScript form
 ├── train.py             ← feature engineering + GridSearchCV + save
 ├── app.py               ← Flask REST API (/api/predict, /api/metrics)
 ├── Dockerfile
@@ -32,8 +32,9 @@ loan-predictor/
 2. Download `accepted_2007_to_2018Q4.csv.gz`
 3. Put it inside the `data/` folder (no need to unzip — pandas reads `.gz` directly)
 
-The file is ~1.7 GB unzipped. Training uses up to 200,000 rows by default
-(adjustable via `MAX_ROWS` in `train.py`).
+The file is ~1.7 GB unzipped. Training uses up to 200,000 rows by default.
+For a quicker run with the from-scratch tree implementation, set the
+`MAX_ROWS` environment variable (for example, `MAX_ROWS=6000 python train.py ...`).
 
 ---
 
@@ -55,11 +56,11 @@ cp -r /path/to/your/microlearn ./microlearn
 pip install -r requirements.txt
 
 # 5. Train the model
-#    — quick synthetic demo (no CSV needed, ~2 min):
+#    — quick synthetic demo (no CSV needed):
 python train.py
 
-#    — real Lending Club data (~5-15 min depending on machine):
-python train.py data/accepted_2007_to_2018Q4.csv.gz
+#    — quick real-data run (recommended for this from-scratch implementation):
+MAX_ROWS=6000 python train.py data/accepted_2007_to_2018Q4.csv.gz
 
 # 6. Start the server
 python app.py
@@ -89,7 +90,8 @@ pip install -r requirements.txt
 REM 5. Train the model (synthetic demo)
 python train.py
 
-REM    Or with real data:
+REM    Or with a 6,000-row real-data sample:
+set MAX_ROWS=6000
 python train.py data\accepted_2007_to_2018Q4.csv.gz
 
 REM 6. Start the server
@@ -188,13 +190,18 @@ report, and top-10 feature importances.
 
 ---
 
-## Expected results (real Lending Club data)
+## Example results
 
-| Metric   | Typical range |
-|----------|--------------|
-| Accuracy | 0.82 – 0.87  |
-| ROC-AUC  | 0.86 – 0.92  |
-| Default rate | ~20 %    |
+The included 6,000-row real-data model was trained on a random sample of
+settled Lending Club loans. Its latest test results are:
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 0.808 |
+| ROC-AUC | 0.710 |
+| Default rate in sample | 19.6% |
 
 Top features by importance: `loan_amnt_to_annual_inc`, `dti`,
 `int_rate`, `revol_util`, `log_annual_inc`.
+
+This is a student project; predictions are not lending decisions.
